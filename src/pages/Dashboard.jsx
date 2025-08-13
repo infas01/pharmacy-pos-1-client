@@ -4,6 +4,12 @@ import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
 import api from '../lib/axios';
 import Alert from '../components/Alert';
+import SalesChart from '../components/SalesChart';
+
+const fmtLKR = (n) =>
+  `LKR ${Number(n || 0).toLocaleString(undefined, {
+    maximumFractionDigits: 2,
+  })}`;
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -11,6 +17,11 @@ export default function Dashboard() {
   const [invoicesToday, setInvoicesToday] = useState(0);
   const [activeProducts, setActiveProducts] = useState(0);
   const [expiringSoon, setExpiringSoon] = useState(0);
+
+  const [totalSales, setTotalSales] = useState(0);
+  const [totalInvoices, setTotalInvoices] = useState(0);
+  const [series, setSeries] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -23,7 +34,7 @@ export default function Dashboard() {
       const end = new Date();
       end.setHours(23, 59, 59, 999);
 
-      const [prodRes, expRes, invRes] = await Promise.all([
+      const [prodRes, expRes, invRes, statsRes] = await Promise.all([
         api.get('/products', { params: { onlyActive: true, limit: 1 } }),
         api.get('/products/expired', { params: { withinDays: 30 } }),
         api.get('/invoices', {
@@ -33,6 +44,7 @@ export default function Dashboard() {
             limit: 1000,
           },
         }),
+        api.get('/invoices/stats', { params: { days: 30 } }),
       ]);
 
       setActiveProducts(prodRes.data.total || 0);
@@ -40,8 +52,15 @@ export default function Dashboard() {
 
       const items = invRes.data.items || [];
       setInvoicesToday(items.length);
-      const total = items.reduce((s, i) => s + Number(i.grandTotal || 0), 0);
-      setSalesToday(total);
+      const todayTotal = items.reduce(
+        (s, i) => s + Number(i.grandTotal || 0),
+        0
+      );
+      setSalesToday(todayTotal);
+
+      setTotalSales(Number(statsRes.data.totalSales || 0));
+      setTotalInvoices(Number(statsRes.data.totalInvoices || 0));
+      setSeries(statsRes.data.series || []);
     } catch (e) {
       setError(
         e?.response?.data?.message || 'Failed to load dashboard metrics'
@@ -56,24 +75,23 @@ export default function Dashboard() {
   }, []);
 
   const kpis = [
-    {
-      kpi: "Today's Sales",
-      value: loading ? '—' : `LKR ${salesToday.toFixed(2)}`,
-    },
+    { kpi: 'Total Sales', value: loading ? '—' : fmtLKR(totalSales) },
+    { kpi: 'Total Invoices', value: loading ? '—' : String(totalInvoices) },
+    { kpi: "Today's Sales", value: loading ? '—' : fmtLKR(salesToday) },
     { kpi: 'Invoices (Today)', value: loading ? '—' : String(invoicesToday) },
     { kpi: 'Active Products', value: loading ? '—' : String(activeProducts) },
     { kpi: 'Expiring ≤ 30 days', value: loading ? '—' : String(expiringSoon) },
   ];
 
   return (
-    <div className="min-h-screen grid grid-cols-[auto,1fr] bg-app-bg text-app-text">
+    <div className="min-h-screen bg-app-bg text-app-text md:grid md:grid-cols-[auto,1fr]">
       <div className="border-r border-app-border bg-white">
         <Sidebar />
       </div>
-
       <div className="flex flex-col min-w-0">
         <Topbar />
-        <main className="p-6 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+
+        <main className="p-6 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {error && (
             <div className="col-span-full">
               <Alert kind="error">{error}</Alert>
@@ -87,9 +105,10 @@ export default function Dashboard() {
             </div>
           ))}
 
+          {/* Sales last 30 days */}
           <section className="col-span-full card p-6">
-            <div className="flex items-center justify-between">
-              <div className="text-lg font-semibold">Quick Actions</div>
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-lg font-semibold">Sales — Last 30 Days</div>
               <button
                 className="btn-outline h-9"
                 onClick={loadMetrics}
@@ -98,6 +117,12 @@ export default function Dashboard() {
                 {loading ? 'Refreshing…' : 'Refresh'}
               </button>
             </div>
+            <SalesChart data={series} height={260} />
+          </section>
+
+          {/* Quick actions */}
+          {/* <section className="col-span-full card p-6">
+            <div className="text-lg font-semibold">Quick Actions</div>
             <div className="mt-4 flex flex-wrap gap-3">
               <button
                 className="btn-primary"
@@ -118,7 +143,7 @@ export default function Dashboard() {
                 Check Expiries
               </button>
             </div>
-          </section>
+          </section> */}
         </main>
       </div>
     </div>

@@ -9,7 +9,7 @@ lerna-debug.log*
 
 #files
 package-lock.json
-
+.env
 
 
 node_modules

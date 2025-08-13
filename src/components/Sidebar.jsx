@@ -40,20 +40,6 @@ function NavList({ onAfterClick }) {
 
   return (
     <>
-      {/* <div className="px-4 h-16 flex items-center justify-between border-b border-app-border">
-        <div className="flex items-center gap-2">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-brand text-white font-semibold">
-            Rx
-          </span>
-          <span className="text-base font-semibold text-slate-900">
-            Pharmacy POS
-          </span>
-        </div>
-        {user?.role && (
-          <span className="text-xs text-app-muted">{user.role}</span>
-        )}
-      </div> */}
-
       <nav className="flex-1 p-3 space-y-1">
         {nav.map(({ to, label, icon, end }) => (
           <NavLink
@@ -99,11 +85,25 @@ function NavList({ onAfterClick }) {
 
 export default function Sidebar() {
   const { sidebarOpen, closeSidebar } = useUI();
+  const { user } = useAuth();
 
   return (
     <>
       {/* Desktop sidebar */}
       <aside className="hidden md:flex md:w-64 lg:w-72 flex-col border-r border-app-border bg-white">
+        <div className="px-4 h-16 flex items-center justify-between border-b border-app-border">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-brand text-white font-semibold">
+              Rx
+            </span>
+            <span className="text-base font-semibold text-slate-900">
+              Pharmacy POS
+            </span>
+          </div>
+          {user?.role && (
+            <span className="text-xs text-app-muted">{user.role}</span>
+          )}
+        </div>
         <NavList />
       </aside>
 

@@ -159,13 +159,14 @@ export default function Users() {
   };
 
   return (
-    <div className="min-h-screen grid grid-cols-[auto,1fr] bg-app-bg text-app-text">
-      <div className="border-r border-app-border bg-white">
-        <Sidebar />
-      </div>
+    <div className="min-h-screen bg-app-bg text-app-text md:grid md:grid-cols-[auto,1fr]">
+      {/* Sidebar renders desktop aside (md+) and mobile drawer (sm) without taking layout width on mobile */}
+      <Sidebar />
+
+      {/* Main column */}
       <div className="flex flex-col min-w-0">
         <Topbar />
-        <main className="p-6">
+        <main className="p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="text-lg font-semibold">Users</div>
             {['Admin'].includes(user?.role) && (
@@ -192,7 +193,7 @@ export default function Users() {
                     <td className="p-3">{u.username}</td>
                     <td className="p-3">
                       <select
-                        className="input"
+                        className="input w-full"
                         value={u.role}
                         onChange={(e) => changeRole(u._id, e.target.value)}
                         disabled={
